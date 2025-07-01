@@ -26,20 +26,19 @@ if prompt := st.chat_input("Say something"):
 
     # Check if API key is provided
     if not openai_api_key:
-        st.error("Please enter your OpenAI API key in the sidebar.")
+        st.error("Please enter your OpenAI API key.")
     else:
         # Generate assistant response
         with st.chat_message("assistant"):
             try:
-                # Set API key
+                # Set the API key (correct way for old OpenAI version)
                 openai.api_key = openai_api_key
                 
                 # Create response
-                with st.spinner("Thinking..."):
-                    response = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
-                        messages=st.session_state.messages
-                    )
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=st.session_state.messages
+                )
                 
                 # Extract and display response
                 reply = response.choices[0].message.content
@@ -50,4 +49,4 @@ if prompt := st.chat_input("Say something"):
                 
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
-                # Don't add error to message history
+                st.error("Make sure your OpenAI API key is valid and you have sufficient credits.")
