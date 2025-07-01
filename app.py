@@ -1,5 +1,5 @@
 import streamlit as st
-from openai import OpenAI
+import openai
 
 st.title("💬 Chatbot")
 
@@ -31,15 +31,14 @@ if prompt := st.chat_input("Say something"):
         # Generate assistant response
         with st.chat_message("assistant"):
             try:
-                # Initialize OpenAI client
-                client = OpenAI(api_key=openai_api_key)
+                # Set API key
+                openai.api_key = openai_api_key
                 
-                # Create response with streaming
+                # Create response
                 with st.spinner("Thinking..."):
-                    response = client.chat.completions.create(
+                    response = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
-                        messages=st.session_state.messages,
-                        stream=False
+                        messages=st.session_state.messages
                     )
                 
                 # Extract and display response
