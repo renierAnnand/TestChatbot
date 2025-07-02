@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+import requests
 
 st.title("💬 Chatbot")
 
@@ -26,27 +26,52 @@ if prompt := st.chat_input("Say something"):
 
     # Check if API key is provided
     if not openai_api_key:
-        st.error("Please enter your OpenAI API key.")
+        st.error("Please enter your OpenAI API key in the sidebar.")
     else:
         # Generate assistant response
         with st.chat_message("assistant"):
             try:
-                # Set the API key (correct way for old OpenAI version)
-                openai.api_key = openai_api_key
+                # Prepare the API request
+                headers = {
+                    "Authorization": f"Bearer {openai_api_key}",
+                    "Content-Type": "application/json"
+                }
                 
-                # Create response
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=st.session_state.messages
-                )
+                data = {
+                    "model": "gpt-3.5-turbo",
+                    "messages": st.session_state.messages
+                }
                 
-                # Extract and display response
-                reply = response.choices[0].message.content
-                st.markdown(reply)
+                # Make the API call using requests
+                with st.spinner("Thinking..."):
+                    response = requests.post(
+                        "https://api.openai.com/v1/chat/completions",
+                        headers=headers,
+                        json=data,
+                        timeout=30
+                    )
                 
-                # Add assistant response to session state
-                st.session_state.messages.append({"role": "assistant", "content": reply})
+                if response.status_code == 200:
+                    # Extract and display response
+                    response_data = response.json()
+                    reply = response_data["choices"][0]["message"]["content"]
+                    st.markdown(reply)
+                    
+                    # Add assistant response to session state
+                    st.session_state.messages.append({"role": "assistant", "content": reply})
+                else:
+                    # Handle API errors
+                    try:
+                        error_data = response.json()
+                        error_message = error_data.get("error", {}).get("message", f"HTTP {response.status_code}")
+                    except:
+                        error_message = f"HTTP {response.status_code}"
+                    st.error(f"API Error: {error_message}")
                 
+            except requests.exceptions.Timeout:
+                st.error("Request timed out. Please try again.")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Network error: {str(e)}")
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
                 st.error("Make sure your OpenAI API key is valid and you have sufficient credits.")
